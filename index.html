@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Keyword Extractor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .container {
+            background: white;
+            max-width: 850px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1a2a3a; font-size: 28px; margin-bottom: 6px; }
+        .sub { color: #666; margin-bottom: 25px; }
+        label { font-weight: bold; display: block; margin-bottom: 6px; color: #1a2a3a; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dce3ec;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        textarea { height: 120px; resize: vertical; }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-success:hover { background: #15803d; }
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            display: none;
+        }
+        .result-box.show { display: block; }
+        .keyword-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 8px 16px;
+            border-radius: 30px;
+            margin: 5px 6px 5px 0;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .copy-area {
+            margin-top: 18px;
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #dce3ec;
+        }
+        .copy-area textarea {
+            height: 60px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #2563eb;
+            font-weight: bold;
+        }
+        .loader.show { display: block; }
+        .or-divider {
+            text-align: center;
+            margin: 10px 0;
+            color: #999;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 ATS Keyword Extractor</h1>
+        <p class="sub">Paste a job description URL or text to extract the most important keywords</p>
+
+        <!-- URL Input -->
+        <label>🔗 Job URL (optional):</label>
+        <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/...">
+
+        <div class="or-divider">— OR —</div>
+
+        <!-- Text Input -->
+        <label>📝 Paste job description text:</label>
+        <textarea id="jobText" placeholder="Copy and paste the job description here..."></textarea>
+
+        <button class="btn-primary" onclick="extractKeywords()">🔍 Extract Keywords</button>
+
+        <div class="loader" id="loader">⏳ Fetching job data...</div>
+
+        <div id="result" class="result-box">
+            <h3>🔑 Top Keywords (most frequent):</h3>
+            <div id="keywordsList"></div>
+
+            <div class="copy-area">
+                <p>📝 Copy this sentence to add to your CV:</p>
+                <textarea id="readyText" rows="2" readonly></textarea>
+                <button class="btn-success" onclick="copyText()">📋 Copy Text</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function extractKeywords() {
+            const jobUrl = document.getElementById('jobUrl').value.trim();
+            const jobText = document.getElementById('jobText').value.trim();
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
+
+            // If URL provided, fetch it
+            if (jobUrl) {
+                loader.classList.add('show');
+                try {
+                    const text = await fetchJobText(jobUrl);
+                    if (text) {
+                        processText(text);
+                        loader.classList.remove('show');
+                        return;
+                    }
+                } catch (error) {
+                    alert('❌ Could not fetch URL. Please paste the text manually.');
+                    loader.classList.remove('show');
+                }
+            }
+
+            // If text provided or URL failed
+            if (jobText) {
+                processText(jobText);
+                return;
+            }
+
+            alert('⚠️ Please paste a job description or enter a valid URL.');
+        }
+
+        async function fetchJobText(url) {
+            // Using a free CORS proxy to fetch URL content
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('Failed to fetch');
+            const html = await response.text();
+            
+            // Extract text from HTML (remove tags)
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            return tempDiv.textContent || tempDiv.innerText || '';
+        }
+
+        function processText(text) {
+            if (!text || text.length < 10) {
+                alert('⚠️ Text is too short. Please paste a complete job description.');
+                return;
+            }
+
+            // Extract words (English + Arabic)
+            const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+
+            // Count frequency
+            const wordCount = {};
+            words.forEach(word => {
+                if (word.length > 2) {
+                    wordCount[word] = (wordCount[word] || 0) + 1;
+                }
+            });
+
+            // Sort by frequency
+            const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
+
+            // Take top 10-15 keywords (filter common stop words)
+            const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can', 
+                             'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any',
+                             'but', 'not', 'one', 'two', 'three', 'use', 'used', 'using'];
+            
+            const filtered = sorted.filter(word => !stopWords.includes(word));
+            const topWords = filtered.slice(0, 15);
+
+            if (topWords.length === 0) {
+                alert('⚠️ No meaningful keywords found. Please paste a longer text.');
+                return;
+            }
+
+            // Display keywords
+            const listDiv = document.getElementById('keywordsList');
+            listDiv.innerHTML = topWords.map(word =>
+                `<span class="keyword-badge">${word}</span>`
+            ).join('');
+
+            // Generate ready sentence
+            document.getElementById('readyText').value = `My key skills include: ${topWords.join(', ')}`;
+
+            // Show result
+            document.getElementById('result').classList.add('show');
+        }
+
+        function copyText() {
+            const text = document.getElementById('readyText');
+            text.select();
+            navigator.clipboard.writeText(text.value).then(() => {
+                alert('✅ Copied! Add it to your CV now.');
+            }).catch(() => {
+                document.execCommand('copy');
+                alert('✅ Copied!');
+            });
+        }
+    </script>
+</body>
+</html>
