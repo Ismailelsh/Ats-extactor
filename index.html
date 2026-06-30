@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Hybrid CV Generator</title>
+    <title>ATS Extractor + CV Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,7 +16,7 @@
         }
         .container {
             background: white;
-            max-width: 850px;
+            max-width: 900px;
             width: 100%;
             padding: 40px;
             border-radius: 24px;
@@ -74,12 +74,51 @@
             max-height: 600px;
             overflow-y: auto;
         }
-        .cv-output h2 {
-            text-align: center;
-            font-size: 22px;
-            margin-bottom: 10px;
+        .keyword-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 8px 16px;
+            border-radius: 30px;
+            margin: 5px 6px 5px 0;
+            font-weight: bold;
+            font-size: 15px;
         }
-        .cv-output .section-title {
+        .or-divider {
+            text-align: center;
+            margin: 10px 0;
+            color: #999;
+            font-weight: bold;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #2563eb;
+            font-weight: bold;
+        }
+        .loader.show { display: block; }
+        .keywords-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            border: 1px solid #dce3ec;
+            display: none;
+        }
+        .keywords-box.show { display: block; }
+        .copy-area {
+            margin-top: 15px;
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #dce3ec;
+        }
+        .copy-area textarea {
+            height: 60px;
+            background: #f9fafb;
+        }
+        .section-title {
             font-weight: bold;
             font-size: 16px;
             border-bottom: 2px solid #2563eb;
@@ -87,9 +126,9 @@
             margin-top: 20px;
             color: #1a2a3a;
         }
-        .cv-output .hidden-words {
-            font-size: 10px;
-            color: #aaa;
+        .hidden-words {
+            font-size: 11px;
+            color: #888;
             text-align: center;
             margin-top: 20px;
             border-top: 1px dashed #ccc;
@@ -100,40 +139,63 @@
 <body>
 <div class="container">
 
-    <h1>📄 Hybrid CV Generator</h1>
-    <p class="sub">Fill in your details — we'll generate a professional CV with hidden ATS-friendly keywords.</p>
+    <h1>🔑 ATS Extractor + CV Generator</h1>
+    <p class="sub">Paste a job description URL or text to extract keywords, then fill in your details to generate a professional CV with hidden ATS-friendly encoding.</p>
 
-    <!-- Name -->
+    <!-- ===== SECTION 1: KEYWORD EXTRACTOR ===== -->
+    <label>🔗 Job URL (optional):</label>
+    <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/..." />
+
+    <div class="or-divider">— OR —</div>
+
+    <label>📝 Paste job description text:</label>
+    <textarea id="jobText" placeholder="Copy and paste the job description here..."></textarea>
+
+    <button class="btn-primary" onclick="extractKeywords()">🔍 Extract Keywords</button>
+
+    <div class="loader" id="loader">⏳ Fetching job data...</div>
+
+    <!-- Keywords Result -->
+    <div id="keywordsResult" class="keywords-box">
+        <h3>🔑 Extracted Keywords (most frequent):</h3>
+        <div id="keywordsList"></div>
+        <div class="copy-area">
+            <p>📝 Copy this sentence to add to your CV:</p>
+            <textarea id="readyText" rows="2" readonly></textarea>
+            <button class="btn-success" onclick="copyText()">📋 Copy Text</button>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
+
+    <!-- ===== SECTION 2: CV FORM ===== -->
+    <h2>📄 Fill in Your Details</h2>
+
     <label>👤 Full Name:</label>
     <input type="text" id="fullName" placeholder="e.g., Ahmed Mohamed" />
 
-    <!-- Email -->
     <label>📧 Email:</label>
     <input type="email" id="email" placeholder="ahmed@example.com" />
 
-    <!-- Phone -->
     <label>📞 Phone:</label>
     <input type="text" id="phone" placeholder="+20 100 000 0000" />
 
-    <!-- Address -->
     <label>📍 Address (optional):</label>
     <input type="text" id="address" placeholder="Cairo, Egypt" />
 
-    <!-- Experience -->
     <label>💼 Experience:</label>
     <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google..."></textarea>
 
-    <!-- Skills -->
     <label>🛠️ Skills (comma separated):</label>
     <input type="text" id="skills" placeholder="e.g., Python, Django, AWS" />
 
-    <!-- Education -->
     <label>🎓 Education:</label>
     <textarea id="education" placeholder="e.g., B.Sc. in Computer Science, Cairo University"></textarea>
 
-    <button class="btn-primary" onclick="generateHybridCV()">🚀 Generate Hybrid CV</button>
+    <button class="btn-primary" onclick="generateHybridCV()" style="background: #16a34a;">🚀 Generate Hybrid CV</button>
 
-    <div id="result" class="result-box">
+    <!-- ===== CV RESULT ===== -->
+    <div id="cvResult" class="result-box">
         <h3>📄 Your Hybrid CV</h3>
         <div id="cvOutput" class="cv-output"></div>
         <div class="flex-buttons">
@@ -145,6 +207,97 @@
 </div>
 
 <script>
+    // ============================================
+    // SECTION 1: KEYWORD EXTRACTOR
+    // ============================================
+
+    async function extractKeywords() {
+        const jobUrl = document.getElementById('jobUrl').value.trim();
+        const jobText = document.getElementById('jobText').value.trim();
+        const loader = document.getElementById('loader');
+        const resultDiv = document.getElementById('keywordsResult');
+
+        if (jobUrl) {
+            loader.classList.add('show');
+            try {
+                const text = await fetchJobText(jobUrl);
+                if (text) {
+                    processKeywords(text);
+                    loader.classList.remove('show');
+                    resultDiv.classList.add('show');
+                    return;
+                }
+            } catch {
+                alert('❌ Could not fetch URL. Please paste text manually.');
+                loader.classList.remove('show');
+            }
+        }
+
+        if (jobText) {
+            processKeywords(jobText);
+            resultDiv.classList.add('show');
+            return;
+        }
+
+        alert('⚠️ Please paste a job description or enter a valid URL.');
+    }
+
+    async function fetchJobText(url) {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const html = await response.text();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        return tempDiv.textContent || tempDiv.innerText || '';
+    }
+
+    function processKeywords(text) {
+        if (!text || text.length < 10) {
+            alert('⚠️ Text is too short. Please paste a complete job description.');
+            return;
+        }
+
+        const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+        const wordCount = {};
+        words.forEach(word => {
+            if (word.length > 2) wordCount[word] = (wordCount[word] || 0) + 1;
+        });
+
+        const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
+        const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can',
+                           'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any',
+                           'but', 'not', 'one', 'two', 'three', 'use', 'used', 'using'];
+        const filtered = sorted.filter(word => !stopWords.includes(word));
+        const topWords = filtered.slice(0, 15);
+
+        if (topWords.length === 0) {
+            alert('⚠️ No meaningful keywords found.');
+            return;
+        }
+
+        document.getElementById('keywordsList').innerHTML = topWords.map(word =>
+            `<span class="keyword-badge">${word}</span>`
+        ).join('');
+
+        document.getElementById('readyText').value = `My key skills include: ${topWords.join(', ')}`;
+    }
+
+    function copyText() {
+        const text = document.getElementById('readyText');
+        text.select();
+        navigator.clipboard.writeText(text.value).then(() => {
+            alert('✅ Copied!');
+        }).catch(() => {
+            document.execCommand('copy');
+            alert('✅ Copied!');
+        });
+    }
+
+    // ============================================
+    // SECTION 2: HYBRID CV GENERATOR
+    // ============================================
+
     function generateHybridCV() {
         const name = document.getElementById('fullName').value.trim();
         const email = document.getElementById('email').value.trim();
@@ -159,18 +312,25 @@
             return;
         }
 
-        // استخراج الكلمات المفتاحية من الخبرات والمهارات
-        const allWords = (experience + ' ' + skills).toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
-        const keywordCount = {};
-        allWords.forEach(w => {
-            if (w.length > 3) keywordCount[w] = (keywordCount[w] || 0) + 1;
-        });
-        const keywords = Object.keys(keywordCount).sort((a, b) => keywordCount[b] - keywordCount[a]).slice(0, 10);
+        // Get keywords from the extracted list (if any)
+        const keywordsText = document.getElementById('readyText').value;
+        let keywords = [];
+        if (keywordsText) {
+            keywords = keywordsText.replace('My key skills include: ', '').split(', ').map(k => k.trim());
+        } else {
+            // Fallback: extract from experience and skills
+            const allWords = (experience + ' ' + skills).toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+            const wordCount = {};
+            allWords.forEach(w => {
+                if (w.length > 3) wordCount[w] = (wordCount[w] || 0) + 1;
+            });
+            keywords = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]).slice(0, 10);
+        }
 
-        // تشفير الكلمات (عكسها)
+        // Encode keywords (reverse them)
         const encodedKeywords = keywords.map(w => w.split('').reverse().join(''));
 
-        // بناء الـ CV
+        // Build the CV
         const cv = `
 ┌─────────────────────────────────────────────────────┐
 │                📄 CURRICULUM VITAE                  │
@@ -195,17 +355,17 @@ ${skills.split(',').map(s => '  • ' + s.trim()).join('\n')}
 ────────────────────────
 ${education}
 
-💡 HIDDEN KEYWORDS (for ATS only)
+🔐 ENCODED KEYWORDS (for ATS only)
 ────────────────────────
 ${keywords.map((k, i) => `  • ${k} → ${encodedKeywords[i]}`).join('\n')}
 
 📌 HR Note: This CV is fully readable by humans.
-   The hidden words are encoded to help the ATS find matches.
+   The encoded words help the ATS find keyword matches.
 ─────────────────────────────────────────────────────
         `;
 
         document.getElementById('cvOutput').textContent = cv;
-        document.getElementById('result').classList.add('show');
+        document.getElementById('cvResult').classList.add('show');
     }
 
     function copyCV() {
