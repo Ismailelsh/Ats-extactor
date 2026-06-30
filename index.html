@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Smart CV Generator</title>
+    <title>Hybrid CV Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -63,22 +63,45 @@
         }
         .cv-output {
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 12px;
             border: 1px solid #dce3ec;
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             white-space: pre-wrap;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.8;
             margin-top: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .cv-output h2 {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        .cv-output .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            color: #1a2a3a;
+        }
+        .cv-output .hidden-words {
+            font-size: 10px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
         }
     </style>
 </head>
 <body>
 <div class="container">
 
-    <h1>📄 Smart CV Generator</h1>
-    <p class="sub">Fill in your details and we'll generate a professional CV instantly.</p>
+    <h1>📄 Hybrid CV Generator</h1>
+    <p class="sub">Fill in your details — we'll generate a professional CV with hidden ATS-friendly keywords.</p>
 
     <!-- Name -->
     <label>👤 Full Name:</label>
@@ -97,23 +120,21 @@
     <input type="text" id="address" placeholder="Cairo, Egypt" />
 
     <!-- Experience -->
-    <label>💼 Experience (write your experience in detail):</label>
-    <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google. Worked on Python, Django, AWS, and led a team of 5."></textarea>
+    <label>💼 Experience:</label>
+    <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google..."></textarea>
 
     <!-- Skills -->
     <label>🛠️ Skills (comma separated):</label>
-    <input type="text" id="skills" placeholder="e.g., Python, Django, AWS, PostgreSQL" />
+    <input type="text" id="skills" placeholder="e.g., Python, Django, AWS" />
 
     <!-- Education -->
     <label>🎓 Education:</label>
-    <textarea id="education" placeholder="e.g., B.Sc. in Computer Science, Cairo University, 2018"></textarea>
+    <textarea id="education" placeholder="e.g., B.Sc. in Computer Science, Cairo University"></textarea>
 
-    <!-- Button -->
-    <button class="btn-primary" onclick="generateCV()">🚀 Generate CV</button>
+    <button class="btn-primary" onclick="generateHybridCV()">🚀 Generate Hybrid CV</button>
 
-    <!-- Result -->
     <div id="result" class="result-box">
-        <h3>📄 Your Professional CV</h3>
+        <h3>📄 Your Hybrid CV</h3>
         <div id="cvOutput" class="cv-output"></div>
         <div class="flex-buttons">
             <button class="btn-success" onclick="copyCV()">📋 Copy CV</button>
@@ -124,7 +145,7 @@
 </div>
 
 <script>
-    function generateCV() {
+    function generateHybridCV() {
         const name = document.getElementById('fullName').value.trim();
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -134,36 +155,54 @@
         const education = document.getElementById('education').value.trim();
 
         if (!name || !email || !phone || !experience || !skills || !education) {
-            alert('⚠️ Please fill in all required fields (Name, Email, Phone, Experience, Skills, Education).');
+            alert('⚠️ Please fill in all required fields.');
             return;
         }
 
+        // استخراج الكلمات المفتاحية من الخبرات والمهارات
+        const allWords = (experience + ' ' + skills).toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+        const keywordCount = {};
+        allWords.forEach(w => {
+            if (w.length > 3) keywordCount[w] = (keywordCount[w] || 0) + 1;
+        });
+        const keywords = Object.keys(keywordCount).sort((a, b) => keywordCount[b] - keywordCount[a]).slice(0, 10);
+
+        // تشفير الكلمات (عكسها)
+        const encodedKeywords = keywords.map(w => w.split('').reverse().join(''));
+
+        // بناء الـ CV
         const cv = `
-==========================================
-            📄 CURRICULUM VITAE
-==========================================
+┌─────────────────────────────────────────────────────┐
+│                📄 CURRICULUM VITAE                  │
+└─────────────────────────────────────────────────────┘
 
 👤 PERSONAL INFORMATION
-───────────────────────
-Name:        ${name}
-Email:       ${email}
-Phone:       ${phone}
-${address ? `Address:     ${address}` : ''}
+────────────────────────
+Name        : ${name}
+Email       : ${email}
+Phone       : ${phone}
+${address ? `Address     : ${address}` : ''}
 
 💼 PROFESSIONAL EXPERIENCE
-───────────────────────
+────────────────────────
 ${experience}
 
-🛠️ SKILLS
-───────────────────────
-${skills.split(',').map(s => '• ' + s.trim()).join('\n')}
+🛠️ TECHNICAL SKILLS
+────────────────────────
+${skills.split(',').map(s => '  • ' + s.trim()).join('\n')}
 
 🎓 EDUCATION
-───────────────────────
+────────────────────────
 ${education}
 
-==========================================
-    `;
+💡 HIDDEN KEYWORDS (for ATS only)
+────────────────────────
+${keywords.map((k, i) => `  • ${k} → ${encodedKeywords[i]}`).join('\n')}
+
+📌 HR Note: This CV is fully readable by humans.
+   The hidden words are encoded to help the ATS find matches.
+─────────────────────────────────────────────────────
+        `;
 
         document.getElementById('cvOutput').textContent = cv;
         document.getElementById('result').classList.add('show');
@@ -172,14 +211,14 @@ ${education}
     function copyCV() {
         const text = document.getElementById('cvOutput').textContent;
         navigator.clipboard.writeText(text).then(() => {
-            alert('✅ CV copied to clipboard!');
+            alert('✅ CV copied!');
         }).catch(() => {
             const range = document.createRange();
             range.selectNode(document.getElementById('cvOutput'));
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             document.execCommand('copy');
-            alert('✅ CV copied to clipboard!');
+            alert('✅ CV copied!');
         });
     }
 
@@ -191,17 +230,33 @@ ${education}
         }
 
         const element = document.createElement('div');
-        element.innerHTML = `<pre style="font-family: 'Courier New', monospace; white-space: pre-wrap; padding: 30px; font-size: 14px; line-height: 1.8; background: white; border-radius: 12px;">${content}</pre>`;
+        element.style.padding = '40px';
+        element.style.fontFamily = 'Courier New, monospace';
+        element.style.fontSize = '14px';
+        element.style.whiteSpace = 'pre-wrap';
+        element.style.lineHeight = '1.8';
+        element.style.background = 'white';
+        element.style.color = 'black';
+        element.textContent = content;
+
         document.body.appendChild(element);
 
-        html2pdf().set({
-            margin:       0.5,
-            filename:     'CV_' + document.getElementById('fullName').value.trim().replace(/\s+/g, '_') + '.pdf',
-            html2canvas:  { scale: 2, letterRendering: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        }).from(element).save().then(() => {
-            document.body.removeChild(element);
-        });
+        html2pdf()
+            .set({
+                margin: 0.5,
+                filename: `CV_${document.getElementById('fullName').value.trim().replace(/\s+/g, '_')}.pdf`,
+                html2canvas: { scale: 2, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .save()
+            .then(() => {
+                document.body.removeChild(element);
+            })
+            .catch(() => {
+                document.body.removeChild(element);
+                alert('❌ PDF download failed. Please use "Copy CV" instead.');
+            });
     }
 </script>
 </body>
