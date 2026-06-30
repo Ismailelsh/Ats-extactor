@@ -211,6 +211,9 @@
     // SECTION 1: KEYWORD EXTRACTOR
     // ============================================
 
+    // Store extracted keywords globally so CV generator can use them
+    let extractedKeywords = [];
+
     async function extractKeywords() {
         const jobUrl = document.getElementById('jobUrl').value.trim();
         const jobText = document.getElementById('jobText').value.trim();
@@ -271,6 +274,9 @@
         const filtered = sorted.filter(word => !stopWords.includes(word));
         const topWords = filtered.slice(0, 15);
 
+        // Store globally for CV generator
+        extractedKeywords = topWords;
+
         if (topWords.length === 0) {
             alert('⚠️ No meaningful keywords found.');
             return;
@@ -295,7 +301,7 @@
     }
 
     // ============================================
-    // SECTION 2: HYBRID CV GENERATOR
+    // SECTION 2: HYBRID CV GENERATOR (FIXED)
     // ============================================
 
     function generateHybridCV() {
@@ -312,17 +318,16 @@
             return;
         }
 
-        // Get keywords from the extracted list (if any)
-        const keywordsText = document.getElementById('readyText').value;
+        // Use the stored extracted keywords, or fallback to skills
         let keywords = [];
-        if (keywordsText) {
-            keywords = keywordsText.replace('My key skills include: ', '').split(', ').map(k => k.trim());
+        if (extractedKeywords && extractedKeywords.length > 0) {
+            keywords = extractedKeywords;
         } else {
-            // Fallback: extract from experience and skills
-            const allWords = (experience + ' ' + skills).toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+            // Fallback: extract keywords from skills
+            const allWords = skills.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
             const wordCount = {};
             allWords.forEach(w => {
-                if (w.length > 3) wordCount[w] = (wordCount[w] || 0) + 1;
+                if (w.length > 2) wordCount[w] = (wordCount[w] || 0) + 1;
             });
             keywords = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]).slice(0, 10);
         }
