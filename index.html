@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>ATS Killer - Keyword Extractor</title>
+    <title>Smart CV Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,282 +33,170 @@
             font-size: 14px;
             font-family: inherit;
         }
-        textarea { height: 120px; resize: vertical; }
+        textarea { height: 100px; resize: vertical; }
         .btn-primary {
             background: #2563eb; color: white; border: none;
             padding: 14px; border-radius: 12px; font-size: 18px;
             font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px;
         }
         .btn-primary:hover { background: #1d4ed8; }
-        .btn-danger {
-            background: #dc2626; color: white; border: none;
-            padding: 14px; border-radius: 12px; font-size: 18px;
-            font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;
-        }
-        .btn-danger:hover { background: #b91c1c; }
         .btn-success {
             background: #16a34a; color: white; border: none;
             padding: 10px 20px; border-radius: 10px; font-size: 16px;
             font-weight: bold; cursor: pointer; margin-top: 10px;
         }
         .btn-success:hover { background: #15803d; }
+        .btn-pdf {
+            background: #8b5cf6; color: white; border: none;
+            padding: 10px 20px; border-radius: 10px; font-size: 16px;
+            font-weight: bold; cursor: pointer; margin-top: 10px; margin-left: 10px;
+        }
+        .btn-pdf:hover { background: #7c3aed; }
         .result-box {
             margin-top: 25px; padding: 20px;
             background: #f8fafc; border-radius: 16px;
             border: 2px solid #e2e8f0; display: none;
         }
         .result-box.show { display: block; }
-        .keyword-badge {
-            display: inline-block;
-            background: #dbeafe; color: #1e40af;
-            padding: 8px 16px; border-radius: 30px;
-            margin: 5px 6px 5px 0;
-            font-weight: bold; font-size: 15px;
-        }
-        .evil-section {
-            margin-top: 25px; padding: 20px;
-            background: #fff0f0; border-radius: 16px;
-            border: 2px solid #dc2626; display: none;
-        }
-        .evil-section.show { display: block; }
-        .copy-area {
-            margin-top: 18px; background: white;
-            padding: 14px; border-radius: 12px;
-            border: 1px solid #dce3ec;
-        }
-        .copy-area textarea {
-            height: 80px; background: #f9fafb;
-        }
-        .or-divider {
-            text-align: center; margin: 10px 0;
-            color: #999; font-weight: bold;
-        }
-        #loader {
-            display: none; text-align: center;
-            padding: 20px; color: #2563eb; font-weight: bold;
-        }
-        #loader.show { display: block; }
-        .btn-pdf {
-            background: #8b5cf6; color: white; border: none;
-            padding: 10px 20px; border-radius: 10px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
-            margin-top: 10px; margin-left: 10px;
-        }
-        .btn-pdf:hover { background: #7c3aed; }
         .flex-buttons {
             display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        .cv-output {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #dce3ec;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-<div class="container" id="contentToExport">
+<div class="container">
 
-    <h1>🔑 ATS Keyword Extractor & Killer</h1>
-    <p class="sub">Paste a job description URL or text — extract keywords & generate an evil CV to confuse the ATS.</p>
+    <h1>📄 Smart CV Generator</h1>
+    <p class="sub">Fill in your details and we'll generate a professional CV instantly.</p>
 
-    <!-- URL Input -->
-    <label>🔗 Job URL (optional):</label>
-    <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/..." />
+    <!-- Name -->
+    <label>👤 Full Name:</label>
+    <input type="text" id="fullName" placeholder="e.g., Ahmed Mohamed" />
 
-    <div class="or-divider">— OR —</div>
+    <!-- Email -->
+    <label>📧 Email:</label>
+    <input type="email" id="email" placeholder="ahmed@example.com" />
 
-    <!-- Text Input -->
-    <label>📝 Paste job description text:</label>
-    <textarea id="jobText" placeholder="Copy and paste the job description here..."></textarea>
+    <!-- Phone -->
+    <label>📞 Phone:</label>
+    <input type="text" id="phone" placeholder="+20 100 000 0000" />
 
-    <button class="btn-primary" onclick="extractKeywords()">🔍 Extract Keywords</button>
+    <!-- Address -->
+    <label>📍 Address (optional):</label>
+    <input type="text" id="address" placeholder="Cairo, Egypt" />
 
-    <div class="loader" id="loader">⏳ Fetching job data...</div>
+    <!-- Experience -->
+    <label>💼 Experience (write your experience in detail):</label>
+    <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google. Worked on Python, Django, AWS, and led a team of 5."></textarea>
 
-    <!-- Result Box -->
+    <!-- Skills -->
+    <label>🛠️ Skills (comma separated):</label>
+    <input type="text" id="skills" placeholder="e.g., Python, Django, AWS, PostgreSQL" />
+
+    <!-- Education -->
+    <label>🎓 Education:</label>
+    <textarea id="education" placeholder="e.g., B.Sc. in Computer Science, Cairo University, 2018"></textarea>
+
+    <!-- Button -->
+    <button class="btn-primary" onclick="generateCV()">🚀 Generate CV</button>
+
+    <!-- Result -->
     <div id="result" class="result-box">
-        <h3>🔑 Top Keywords (most frequent):</h3>
-        <div id="keywordsList"></div>
-
-        <div class="copy-area">
-            <p>📝 Copy this sentence to add to your CV:</p>
-            <textarea id="readyText" rows="2" readonly></textarea>
-            <button class="btn-success" onclick="copyText()">📋 Copy Text</button>
-        </div>
-    </div>
-
-    <!-- Evil Section (ATS Killer) -->
-    <div id="evilSection" class="evil-section">
-        <h3 style="color: #dc2626;">🧨 ATS Killer — Evil CV Generator</h3>
-        <p>Write your experience below and we'll generate a CV that confuses the ATS but is readable by HR.</p>
-
-        <label>📝 Your experience (e.g., "5 years Python, AI certification"):</label>
-        <input type="text" id="userExperience" placeholder="Write your experience here..." />
-
-        <button class="btn-danger" onclick="generateEvilCV()">💀 Generate Evil CV</button>
-
-        <div id="evilResult" style="margin-top: 15px; display: none;">
-            <h4>📄 Your Evil CV (copy & use it):</h4>
-            <textarea id="evilCVText" rows="8" readonly></textarea>
-            <div class="flex-buttons">
-                <button class="btn-success" onclick="copyEvilCV()">📋 Copy CV</button>
-                <button class="btn-pdf" onclick="downloadPDF()">📄 Download as PDF</button>
-            </div>
+        <h3>📄 Your Professional CV</h3>
+        <div id="cvOutput" class="cv-output"></div>
+        <div class="flex-buttons">
+            <button class="btn-success" onclick="copyCV()">📋 Copy CV</button>
+            <button class="btn-pdf" onclick="downloadPDF()">📄 Download as PDF</button>
         </div>
     </div>
 
 </div>
 
 <script>
-    // ========== EXTRACT KEYWORDS ==========
-    async function extractKeywords() {
-        const jobUrl = document.getElementById('jobUrl').value.trim();
-        const jobText = document.getElementById('jobText').value.trim();
-        const loader = document.getElementById('loader');
+    function generateCV() {
+        const name = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const experience = document.getElementById('experience').value.trim();
+        const skills = document.getElementById('skills').value.trim();
+        const education = document.getElementById('education').value.trim();
 
-        if (jobUrl) {
-            loader.classList.add('show');
-            try {
-                const text = await fetchJobText(jobUrl);
-                if (text) {
-                    processText(text);
-                    loader.classList.remove('show');
-                    return;
-                }
-            } catch {
-                alert('❌ Could not fetch URL. Please paste text manually.');
-                loader.classList.remove('show');
-            }
-        }
-
-        if (jobText) {
-            processText(jobText);
+        if (!name || !email || !phone || !experience || !skills || !education) {
+            alert('⚠️ Please fill in all required fields (Name, Email, Phone, Experience, Skills, Education).');
             return;
         }
 
-        alert('⚠️ Please paste a job description or enter a valid URL.');
-    }
+        const cv = `
+==========================================
+            📄 CURRICULUM VITAE
+==========================================
 
-    async function fetchJobText(url) {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Failed to fetch');
-        const html = await response.text();
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        return tempDiv.textContent || tempDiv.innerText || '';
-    }
+👤 PERSONAL INFORMATION
+───────────────────────
+Name:        ${name}
+Email:       ${email}
+Phone:       ${phone}
+${address ? `Address:     ${address}` : ''}
 
-    function processText(text) {
-        if (!text || text.length < 10) {
-            alert('⚠️ Text is too short. Please paste a complete job description.');
-            return;
-        }
+💼 PROFESSIONAL EXPERIENCE
+───────────────────────
+${experience}
 
-        const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
-        const wordCount = {};
-        words.forEach(word => {
-            if (word.length > 2) wordCount[word] = (wordCount[word] || 0) + 1;
-        });
+🛠️ SKILLS
+───────────────────────
+${skills.split(',').map(s => '• ' + s.trim()).join('\n')}
 
-        const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
-        const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can',
-                           'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any',
-                           'but', 'not', 'one', 'two', 'three', 'use', 'used', 'using'];
-        const filtered = sorted.filter(word => !stopWords.includes(word));
-        const topWords = filtered.slice(0, 15);
+🎓 EDUCATION
+───────────────────────
+${education}
 
-        if (topWords.length === 0) {
-            alert('⚠️ No meaningful keywords found. Please paste a longer text.');
-            return;
-        }
+==========================================
+    `;
 
-        document.getElementById('keywordsList').innerHTML = topWords.map(word =>
-            `<span class="keyword-badge">${word}</span>`
-        ).join('');
-
-        document.getElementById('readyText').value = `My key skills include: ${topWords.join(', ')}`;
+        document.getElementById('cvOutput').textContent = cv;
         document.getElementById('result').classList.add('show');
-        document.getElementById('evilSection').classList.add('show');
     }
 
-    function copyText() {
-        const text = document.getElementById('readyText');
-        text.select();
-        navigator.clipboard.writeText(text.value).then(() => {
-            alert('✅ Copied! Add it to your CV now.');
+    function copyCV() {
+        const text = document.getElementById('cvOutput').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('✅ CV copied to clipboard!');
         }).catch(() => {
+            const range = document.createRange();
+            range.selectNode(document.getElementById('cvOutput'));
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
             document.execCommand('copy');
-            alert('✅ Copied!');
+            alert('✅ CV copied to clipboard!');
         });
     }
 
-    // ========== GENERATE EVIL CV ==========
-    function generateEvilCV() {
-        const jobText = document.getElementById('jobText').value.trim();
-        const userExp = document.getElementById('userExperience').value.trim();
-        const resultDiv = document.getElementById('evilResult');
-        const textArea = document.getElementById('evilCVText');
-
-        if (!jobText || !userExp) {
-            alert('⚠️ Please paste the job description and write your experience first!');
-            return;
-        }
-
-        const keywords = extractKeywordsFromText(jobText);
-        const evilWords = ['🐒', '🍕', '🤖', '💀', '✨', '🌀', '🔥', '⭐'];
-
-        let evilCV = `🔹 Experience: ${userExp}\n\n`;
-        evilCV += `🔹 Keywords (for ATS):\n`;
-
-        keywords.forEach((word, index) => {
-            evilCV += `  ${word}`;
-            if (index % 2 === 0) evilCV += ` ${evilWords[Math.floor(Math.random() * evilWords.length)]}`;
-            if (index % 3 === 0) evilCV += ` ${word.split('').reverse().join('')}`;
-            if (index % 5 === 0) evilCV += ` 🔹🔸🔹`;
-            evilCV += `\n`;
-        });
-
-        const hiddenNote = `\n---\n📌 HR Note: This CV is designed to confuse ATS. Please read it yourself! 😉`;
-        evilCV += hiddenNote;
-
-        textArea.value = evilCV;
-        resultDiv.style.display = 'block';
-    }
-
-    function extractKeywordsFromText(text) {
-        const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
-        const wordCount = {};
-        words.forEach(word => {
-            if (word.length > 2) wordCount[word] = (wordCount[word] || 0) + 1;
-        });
-        const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
-        const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can',
-                           'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any'];
-        return sorted.filter(word => !stopWords.includes(word)).slice(0, 15);
-    }
-
-    function copyEvilCV() {
-        const text = document.getElementById('evilCVText');
-        text.select();
-        navigator.clipboard.writeText(text.value).then(() => {
-            alert('✅ Evil CV copied! Use it wisely 😈');
-        }).catch(() => {
-            document.execCommand('copy');
-            alert('✅ Evil CV copied!');
-        });
-    }
-
-    // ========== DOWNLOAD PDF ==========
     function downloadPDF() {
-        const content = document.getElementById('evilCVText').value;
+        const content = document.getElementById('cvOutput').textContent;
         if (!content) {
-            alert('⚠️ Generate an Evil CV first!');
+            alert('⚠️ Generate a CV first!');
             return;
         }
 
         const element = document.createElement('div');
-        element.innerHTML = `<pre style="font-family: 'Courier New', monospace; white-space: pre-wrap; padding: 20px; font-size: 14px;">${content}</pre>`;
+        element.innerHTML = `<pre style="font-family: 'Courier New', monospace; white-space: pre-wrap; padding: 30px; font-size: 14px; line-height: 1.8; background: white; border-radius: 12px;">${content}</pre>`;
         document.body.appendChild(element);
 
         html2pdf().set({
             margin:       0.5,
-            filename:     'evil_cv.pdf',
+            filename:     'CV_' + document.getElementById('fullName').value.trim().replace(/\s+/g, '_') + '.pdf',
             html2canvas:  { scale: 2, letterRendering: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         }).from(element).save().then(() => {
