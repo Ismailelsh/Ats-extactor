@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATS Keyword Extractor</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ATS Killer - Keyword Extractor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -21,227 +22,299 @@
             border-radius: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        h1 { color: #1a2a3a; font-size: 28px; margin-bottom: 6px; }
+        h1 { color: #1a2a3a; font-size: 28px; }
         .sub { color: #666; margin-bottom: 25px; }
-        label { font-weight: bold; display: block; margin-bottom: 6px; color: #1a2a3a; }
+        label { font-weight: bold; display: block; margin-top: 16px; margin-bottom: 6px; }
         input, textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #dce3ec;
             border-radius: 12px;
             font-size: 14px;
-            margin-bottom: 16px;
             font-family: inherit;
-        }
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #2563eb;
         }
         textarea { height: 120px; resize: vertical; }
         .btn-primary {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-bottom: 10px;
+            background: #2563eb; color: white; border: none;
+            padding: 14px; border-radius: 12px; font-size: 18px;
+            font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px;
         }
         .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger {
+            background: #dc2626; color: white; border: none;
+            padding: 14px; border-radius: 12px; font-size: 18px;
+            font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;
+        }
+        .btn-danger:hover { background: #b91c1c; }
         .btn-success {
-            background: #16a34a;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+            background: #16a34a; color: white; border: none;
+            padding: 10px 20px; border-radius: 10px; font-size: 16px;
+            font-weight: bold; cursor: pointer; margin-top: 10px;
         }
         .btn-success:hover { background: #15803d; }
         .result-box {
-            margin-top: 25px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 16px;
-            border: 2px solid #e2e8f0;
-            display: none;
+            margin-top: 25px; padding: 20px;
+            background: #f8fafc; border-radius: 16px;
+            border: 2px solid #e2e8f0; display: none;
         }
         .result-box.show { display: block; }
         .keyword-badge {
             display: inline-block;
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 8px 16px;
-            border-radius: 30px;
+            background: #dbeafe; color: #1e40af;
+            padding: 8px 16px; border-radius: 30px;
             margin: 5px 6px 5px 0;
-            font-weight: bold;
-            font-size: 15px;
+            font-weight: bold; font-size: 15px;
         }
+        .evil-section {
+            margin-top: 25px; padding: 20px;
+            background: #fff0f0; border-radius: 16px;
+            border: 2px solid #dc2626; display: none;
+        }
+        .evil-section.show { display: block; }
         .copy-area {
-            margin-top: 18px;
-            background: white;
-            padding: 14px;
-            border-radius: 12px;
+            margin-top: 18px; background: white;
+            padding: 14px; border-radius: 12px;
             border: 1px solid #dce3ec;
         }
         .copy-area textarea {
-            height: 60px;
-            margin-bottom: 10px;
-            background: #f9fafb;
+            height: 80px; background: #f9fafb;
         }
-        .loader {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #2563eb;
-            font-weight: bold;
-        }
-        .loader.show { display: block; }
         .or-divider {
-            text-align: center;
-            margin: 10px 0;
-            color: #999;
-            font-weight: bold;
+            text-align: center; margin: 10px 0;
+            color: #999; font-weight: bold;
+        }
+        #loader {
+            display: none; text-align: center;
+            padding: 20px; color: #2563eb; font-weight: bold;
+        }
+        #loader.show { display: block; }
+        .btn-pdf {
+            background: #8b5cf6; color: white; border: none;
+            padding: 10px 20px; border-radius: 10px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            margin-top: 10px; margin-left: 10px;
+        }
+        .btn-pdf:hover { background: #7c3aed; }
+        .flex-buttons {
+            display: flex; gap: 10px; flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔑 ATS Keyword Extractor</h1>
-        <p class="sub">Paste a job description URL or text to extract the most important keywords</p>
+<div class="container" id="contentToExport">
 
-        <!-- URL Input -->
-        <label>🔗 Job URL (optional):</label>
-        <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/...">
+    <h1>🔑 ATS Keyword Extractor & Killer</h1>
+    <p class="sub">Paste a job description URL or text — extract keywords & generate an evil CV to confuse the ATS.</p>
 
-        <div class="or-divider">— OR —</div>
+    <!-- URL Input -->
+    <label>🔗 Job URL (optional):</label>
+    <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/..." />
 
-        <!-- Text Input -->
-        <label>📝 Paste job description text:</label>
-        <textarea id="jobText" placeholder="Copy and paste the job description here..."></textarea>
+    <div class="or-divider">— OR —</div>
 
-        <button class="btn-primary" onclick="extractKeywords()">🔍 Extract Keywords</button>
+    <!-- Text Input -->
+    <label>📝 Paste job description text:</label>
+    <textarea id="jobText" placeholder="Copy and paste the job description here..."></textarea>
 
-        <div class="loader" id="loader">⏳ Fetching job data...</div>
+    <button class="btn-primary" onclick="extractKeywords()">🔍 Extract Keywords</button>
 
-        <div id="result" class="result-box">
-            <h3>🔑 Top Keywords (most frequent):</h3>
-            <div id="keywordsList"></div>
+    <div class="loader" id="loader">⏳ Fetching job data...</div>
 
-            <div class="copy-area">
-                <p>📝 Copy this sentence to add to your CV:</p>
-                <textarea id="readyText" rows="2" readonly></textarea>
-                <button class="btn-success" onclick="copyText()">📋 Copy Text</button>
+    <!-- Result Box -->
+    <div id="result" class="result-box">
+        <h3>🔑 Top Keywords (most frequent):</h3>
+        <div id="keywordsList"></div>
+
+        <div class="copy-area">
+            <p>📝 Copy this sentence to add to your CV:</p>
+            <textarea id="readyText" rows="2" readonly></textarea>
+            <button class="btn-success" onclick="copyText()">📋 Copy Text</button>
+        </div>
+    </div>
+
+    <!-- Evil Section (ATS Killer) -->
+    <div id="evilSection" class="evil-section">
+        <h3 style="color: #dc2626;">🧨 ATS Killer — Evil CV Generator</h3>
+        <p>Write your experience below and we'll generate a CV that confuses the ATS but is readable by HR.</p>
+
+        <label>📝 Your experience (e.g., "5 years Python, AI certification"):</label>
+        <input type="text" id="userExperience" placeholder="Write your experience here..." />
+
+        <button class="btn-danger" onclick="generateEvilCV()">💀 Generate Evil CV</button>
+
+        <div id="evilResult" style="margin-top: 15px; display: none;">
+            <h4>📄 Your Evil CV (copy & use it):</h4>
+            <textarea id="evilCVText" rows="8" readonly></textarea>
+            <div class="flex-buttons">
+                <button class="btn-success" onclick="copyEvilCV()">📋 Copy CV</button>
+                <button class="btn-pdf" onclick="downloadPDF()">📄 Download as PDF</button>
             </div>
         </div>
     </div>
 
-    <script>
-        async function extractKeywords() {
-            const jobUrl = document.getElementById('jobUrl').value.trim();
-            const jobText = document.getElementById('jobText').value.trim();
-            const resultDiv = document.getElementById('result');
-            const loader = document.getElementById('loader');
+</div>
 
-            // If URL provided, fetch it
-            if (jobUrl) {
-                loader.classList.add('show');
-                try {
-                    const text = await fetchJobText(jobUrl);
-                    if (text) {
-                        processText(text);
-                        loader.classList.remove('show');
-                        return;
-                    }
-                } catch (error) {
-                    alert('❌ Could not fetch URL. Please paste the text manually.');
+<script>
+    // ========== EXTRACT KEYWORDS ==========
+    async function extractKeywords() {
+        const jobUrl = document.getElementById('jobUrl').value.trim();
+        const jobText = document.getElementById('jobText').value.trim();
+        const loader = document.getElementById('loader');
+
+        if (jobUrl) {
+            loader.classList.add('show');
+            try {
+                const text = await fetchJobText(jobUrl);
+                if (text) {
+                    processText(text);
                     loader.classList.remove('show');
+                    return;
                 }
+            } catch {
+                alert('❌ Could not fetch URL. Please paste text manually.');
+                loader.classList.remove('show');
             }
-
-            // If text provided or URL failed
-            if (jobText) {
-                processText(jobText);
-                return;
-            }
-
-            alert('⚠️ Please paste a job description or enter a valid URL.');
         }
 
-        async function fetchJobText(url) {
-            // Using a free CORS proxy to fetch URL content
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error('Failed to fetch');
-            const html = await response.text();
-            
-            // Extract text from HTML (remove tags)
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            return tempDiv.textContent || tempDiv.innerText || '';
+        if (jobText) {
+            processText(jobText);
+            return;
         }
 
-        function processText(text) {
-            if (!text || text.length < 10) {
-                alert('⚠️ Text is too short. Please paste a complete job description.');
-                return;
-            }
+        alert('⚠️ Please paste a job description or enter a valid URL.');
+    }
 
-            // Extract words (English + Arabic)
-            const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+    async function fetchJobText(url) {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const html = await response.text();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        return tempDiv.textContent || tempDiv.innerText || '';
+    }
 
-            // Count frequency
-            const wordCount = {};
-            words.forEach(word => {
-                if (word.length > 2) {
-                    wordCount[word] = (wordCount[word] || 0) + 1;
-                }
-            });
-
-            // Sort by frequency
-            const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
-
-            // Take top 10-15 keywords (filter common stop words)
-            const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can', 
-                             'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any',
-                             'but', 'not', 'one', 'two', 'three', 'use', 'used', 'using'];
-            
-            const filtered = sorted.filter(word => !stopWords.includes(word));
-            const topWords = filtered.slice(0, 15);
-
-            if (topWords.length === 0) {
-                alert('⚠️ No meaningful keywords found. Please paste a longer text.');
-                return;
-            }
-
-            // Display keywords
-            const listDiv = document.getElementById('keywordsList');
-            listDiv.innerHTML = topWords.map(word =>
-                `<span class="keyword-badge">${word}</span>`
-            ).join('');
-
-            // Generate ready sentence
-            document.getElementById('readyText').value = `My key skills include: ${topWords.join(', ')}`;
-
-            // Show result
-            document.getElementById('result').classList.add('show');
+    function processText(text) {
+        if (!text || text.length < 10) {
+            alert('⚠️ Text is too short. Please paste a complete job description.');
+            return;
         }
 
-        function copyText() {
-            const text = document.getElementById('readyText');
-            text.select();
-            navigator.clipboard.writeText(text.value).then(() => {
-                alert('✅ Copied! Add it to your CV now.');
-            }).catch(() => {
-                document.execCommand('copy');
-                alert('✅ Copied!');
-            });
+        const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+        const wordCount = {};
+        words.forEach(word => {
+            if (word.length > 2) wordCount[word] = (wordCount[word] || 0) + 1;
+        });
+
+        const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
+        const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can',
+                           'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any',
+                           'but', 'not', 'one', 'two', 'three', 'use', 'used', 'using'];
+        const filtered = sorted.filter(word => !stopWords.includes(word));
+        const topWords = filtered.slice(0, 15);
+
+        if (topWords.length === 0) {
+            alert('⚠️ No meaningful keywords found. Please paste a longer text.');
+            return;
         }
-    </script>
+
+        document.getElementById('keywordsList').innerHTML = topWords.map(word =>
+            `<span class="keyword-badge">${word}</span>`
+        ).join('');
+
+        document.getElementById('readyText').value = `My key skills include: ${topWords.join(', ')}`;
+        document.getElementById('result').classList.add('show');
+        document.getElementById('evilSection').classList.add('show');
+    }
+
+    function copyText() {
+        const text = document.getElementById('readyText');
+        text.select();
+        navigator.clipboard.writeText(text.value).then(() => {
+            alert('✅ Copied! Add it to your CV now.');
+        }).catch(() => {
+            document.execCommand('copy');
+            alert('✅ Copied!');
+        });
+    }
+
+    // ========== GENERATE EVIL CV ==========
+    function generateEvilCV() {
+        const jobText = document.getElementById('jobText').value.trim();
+        const userExp = document.getElementById('userExperience').value.trim();
+        const resultDiv = document.getElementById('evilResult');
+        const textArea = document.getElementById('evilCVText');
+
+        if (!jobText || !userExp) {
+            alert('⚠️ Please paste the job description and write your experience first!');
+            return;
+        }
+
+        const keywords = extractKeywordsFromText(jobText);
+        const evilWords = ['🐒', '🍕', '🤖', '💀', '✨', '🌀', '🔥', '⭐'];
+
+        let evilCV = `🔹 Experience: ${userExp}\n\n`;
+        evilCV += `🔹 Keywords (for ATS):\n`;
+
+        keywords.forEach((word, index) => {
+            evilCV += `  ${word}`;
+            if (index % 2 === 0) evilCV += ` ${evilWords[Math.floor(Math.random() * evilWords.length)]}`;
+            if (index % 3 === 0) evilCV += ` ${word.split('').reverse().join('')}`;
+            if (index % 5 === 0) evilCV += ` 🔹🔸🔹`;
+            evilCV += `\n`;
+        });
+
+        const hiddenNote = `\n---\n📌 HR Note: This CV is designed to confuse ATS. Please read it yourself! 😉`;
+        evilCV += hiddenNote;
+
+        textArea.value = evilCV;
+        resultDiv.style.display = 'block';
+    }
+
+    function extractKeywordsFromText(text) {
+        const words = text.toLowerCase().match(/[a-z\u0600-\u06FF]+/g) || [];
+        const wordCount = {};
+        words.forEach(word => {
+            if (word.length > 2) wordCount[word] = (wordCount[word] || 0) + 1;
+        });
+        const sorted = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]);
+        const stopWords = ['and', 'the', 'for', 'with', 'are', 'you', 'your', 'our', 'will', 'can',
+                           'from', 'this', 'that', 'have', 'has', 'had', 'was', 'were', 'all', 'any'];
+        return sorted.filter(word => !stopWords.includes(word)).slice(0, 15);
+    }
+
+    function copyEvilCV() {
+        const text = document.getElementById('evilCVText');
+        text.select();
+        navigator.clipboard.writeText(text.value).then(() => {
+            alert('✅ Evil CV copied! Use it wisely 😈');
+        }).catch(() => {
+            document.execCommand('copy');
+            alert('✅ Evil CV copied!');
+        });
+    }
+
+    // ========== DOWNLOAD PDF ==========
+    function downloadPDF() {
+        const content = document.getElementById('evilCVText').value;
+        if (!content) {
+            alert('⚠️ Generate an Evil CV first!');
+            return;
+        }
+
+        const element = document.createElement('div');
+        element.innerHTML = `<pre style="font-family: 'Courier New', monospace; white-space: pre-wrap; padding: 20px; font-size: 14px;">${content}</pre>`;
+        document.body.appendChild(element);
+
+        html2pdf().set({
+            margin:       0.5,
+            filename:     'evil_cv.pdf',
+            html2canvas:  { scale: 2, letterRendering: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        }).from(element).save().then(() => {
+            document.body.removeChild(element);
+        });
+    }
+</script>
 </body>
 </html>
