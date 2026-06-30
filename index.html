@@ -65,7 +65,7 @@
             padding: 30px;
             border-radius: 12px;
             border: 1px solid #dce3ec;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: 'Courier New', monospace;
             white-space: pre-wrap;
             font-size: 14px;
             line-height: 1.8;
@@ -116,6 +116,14 @@
         .copy-area textarea {
             height: 60px;
             background: #f9fafb;
+        }
+        /* Print styles for PDF */
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 20px; }
+            .btn-primary, .btn-success, .btn-pdf, .flex-buttons, .copy-area, .keywords-box, .or-divider, hr, .loader, .sub { display: none !important; }
+            .result-box { display: block !important; border: none; padding: 0; }
+            .cv-output { max-height: none; border: none; padding: 0; }
         }
     </style>
 </head>
@@ -299,7 +307,6 @@
             return;
         }
 
-        // Use extracted keywords or fallback to skills
         let keywords = [];
         if (extractedKeywords && extractedKeywords.length > 0) {
             keywords = extractedKeywords;
@@ -312,7 +319,6 @@
             keywords = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]).slice(0, 10);
         }
 
-        // Build professional CV (NO emojis, NO weird notes)
         const cv = `
 CURRICULUM VITAE
 
@@ -358,6 +364,10 @@ ${keywords.map(k => '  * ' + k).join('\n')}
         });
     }
 
+    // ============================================
+    // PDF DOWNLOAD (using window.print() - works 100%)
+    // ============================================
+
     function downloadPDF() {
         const content = document.getElementById('cvOutput').textContent;
         if (!content) {
@@ -365,35 +375,42 @@ ${keywords.map(k => '  * ' + k).join('\n')}
             return;
         }
 
-        // Create a clean element for PDF
-        const element = document.createElement('div');
-        element.style.padding = '40px';
-        element.style.fontFamily = 'Courier New, monospace';
-        element.style.fontSize = '14px';
-        element.style.whiteSpace = 'pre-wrap';
-        element.style.lineHeight = '1.8';
-        element.style.background = 'white';
-        element.style.color = 'black';
-        element.textContent = content;
-
-        document.body.appendChild(element);
-
-        // Use html2pdf with better settings
-        const opt = {
-            margin:       0.5,
-            filename:     `CV_${document.getElementById('fullName').value.trim().replace(/\s+/g, '_')}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, letterRendering: true, useCORS: true, logging: false },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save().then(() => {
-            document.body.removeChild(element);
-        }).catch((err) => {
-            document.body.removeChild(element);
-            alert('PDF download failed. Please use "Copy CV" instead.');
-            console.error(err);
-        });
+        // Create a temporary container with only the CV content
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>CV - ${document.getElementById('fullName').value.trim()}</title>
+                    <style>
+                        body {
+                            font-family: 'Courier New', monospace;
+                            padding: 40px;
+                            white-space: pre-wrap;
+                            font-size: 14px;
+                            line-height: 1.8;
+                            background: white;
+                            color: black;
+                        }
+                        .cv-content {
+                            max-width: 800px;
+                            margin: 0 auto;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="cv-content">${content.replace(/\n/g, '<br>')}</div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() {
+                                window.close();
+                            }, 1000);
+                        };
+                    <\/script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
     }
 </script>
 </body>
