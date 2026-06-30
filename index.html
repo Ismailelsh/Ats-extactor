@@ -15,7 +15,7 @@
         }
         .container {
             background: white;
-            max-width: 900px;
+            max-width: 950px;
             width: 100%;
             padding: 40px;
             border-radius: 24px;
@@ -62,60 +62,93 @@
         }
         .cv-output {
             background: white;
-            padding: 30px;
+            padding: 40px;
             border-radius: 12px;
-            border: 1px solid #dce3ec;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-            font-size: 14px;
-            line-height: 1.8;
+            border: 1px solid #e2e8f0;
             margin-top: 10px;
             max-height: 600px;
             overflow-y: auto;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: #1a1a1a;
+            line-height: 1.6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        .keyword-badge {
+        .cv-output .header {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+            color: white;
+            padding: 30px 25px;
+            border-radius: 12px 12px 0 0;
+            margin: -40px -40px 20px -40px;
+        }
+        .cv-output .header h2 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .cv-output .header .subtitle {
+            font-size: 16px;
+            opacity: 0.85;
+            margin-top: 4px;
+            font-weight: 300;
+        }
+        .cv-output .header .contact {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 10px;
+        }
+        .cv-output .section {
+            margin-bottom: 18px;
+        }
+        .cv-output .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3a5f;
+            border-bottom: 3px solid #2d5a87;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .cv-output .section-content ul {
+            list-style: none;
+            padding: 0;
+        }
+        .cv-output .section-content ul li {
+            padding: 3px 0;
+            position: relative;
+            padding-left: 18px;
+        }
+        .cv-output .section-content ul li::before {
+            content: "▹";
+            color: #2d5a87;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        .cv-output .keywords-tag {
             display: inline-block;
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 8px 16px;
-            border-radius: 30px;
-            margin: 5px 6px 5px 0;
-            font-weight: bold;
-            font-size: 15px;
+            background: #e6f0fa;
+            color: #1e3a5f;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px 4px 2px 0;
         }
-        .or-divider {
-            text-align: center;
-            margin: 10px 0;
-            color: #999;
-            font-weight: bold;
-        }
-        .loader {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #2563eb;
-            font-weight: bold;
-        }
-        .loader.show { display: block; }
-        .keywords-box {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 12px;
-            border: 1px solid #dce3ec;
-            display: none;
-        }
-        .keywords-box.show { display: block; }
-        .copy-area {
-            margin-top: 15px;
+        /* HIDDEN KEYWORDS - visible to ATS, invisible to humans */
+        .hidden-keywords {
+            color: white;
             background: white;
-            padding: 14px;
-            border-radius: 12px;
-            border: 1px solid #dce3ec;
-        }
-        .copy-area textarea {
-            height: 60px;
-            background: #f9fafb;
+            font-size: 0.1px;
+            height: 0;
+            overflow: hidden;
+            display: block;
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+            user-select: none;
         }
         /* Print styles for PDF */
         @media print {
@@ -123,7 +156,9 @@
             .container { box-shadow: none; padding: 20px; }
             .btn-primary, .btn-success, .btn-pdf, .flex-buttons, .copy-area, .keywords-box, .or-divider, hr, .loader, .sub { display: none !important; }
             .result-box { display: block !important; border: none; padding: 0; }
-            .cv-output { max-height: none; border: none; padding: 0; }
+            .cv-output { max-height: none; border: none; padding: 20px; box-shadow: none; }
+            .cv-output .header { margin: -20px -20px 20px -20px; border-radius: 0; }
+            .hidden-keywords { display: block !important; }
         }
     </style>
 </head>
@@ -174,8 +209,8 @@
     <label>Address (optional):</label>
     <input type="text" id="address" placeholder="Cairo, Egypt" />
 
-    <label>Experience:</label>
-    <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google..."></textarea>
+    <label>Experience (mention your role, responsibilities, and achievements):</label>
+    <textarea id="experience" placeholder="e.g., 5 years as a Software Engineer at Google. Led team of 5, built scalable microservices."></textarea>
 
     <label>Skills (comma separated):</label>
     <input type="text" id="skills" placeholder="e.g., Python, Django, AWS" />
@@ -319,34 +354,70 @@
             keywords = Object.keys(wordCount).sort((a, b) => wordCount[b] - wordCount[a]).slice(0, 10);
         }
 
-        const cv = `
-CURRICULUM VITAE
+        const skillsArray = skills.split(',').map(s => s.trim());
+        const keywordsTags = keywords.map(k => `<span class="keywords-tag">${k}</span>`).join(' ');
 
-PERSONAL INFORMATION
---------------------
-Name        : ${name}
-Email       : ${email}
-Phone       : ${phone}
-${address ? `Address     : ${address}` : ''}
+        // Generate hidden keywords (repeated, encoded, and synonyms)
+        const hiddenKeywords = keywords.map(k => k + ' ' + k.split('').reverse().join('')).join(' ');
 
-PROFESSIONAL EXPERIENCE
------------------------
-${experience}
+        // Build HTML CV
+        const cvHTML = `
+            <div class="header">
+                <h2>${name}</h2>
+                <div class="subtitle">Senior Professional</div>
+                <div class="contact">
+                    ${email} &nbsp;|&nbsp; ${phone} ${address ? `&nbsp;|&nbsp; ${address}` : ''}
+                </div>
+            </div>
 
-TECHNICAL SKILLS
-----------------
-${skills.split(',').map(s => '  * ' + s.trim()).join('\n')}
+            <div class="hidden-keywords">
+                ${hiddenKeywords}
+                ${keywords.map(k => k + ' ').join('')}
+                ${keywords.map(k => k.split('').reverse().join(' ')).join(' ')}
+            </div>
 
-EDUCATION
----------
-${education}
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="section-content">
+                    <p>${experience}</p>
+                    <p style="margin-top: 8px; font-size: 13px; color: #2d5a87;">
+                        Core competencies: ${keywords.join(', ')}
+                    </p>
+                </div>
+            </div>
 
-ADDITIONAL KEYWORDS
--------------------
-${keywords.map(k => '  * ' + k).join('\n')}
+            <div class="section">
+                <div class="section-title">Technical Skills</div>
+                <div class="section-content">
+                    <ul>
+                        ${skillsArray.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Core Competencies</div>
+                <div class="section-content">
+                    ${keywordsTags}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Education</div>
+                <div class="section-content">
+                    <p>${education}</p>
+                </div>
+            </div>
+
+            <div class="section" style="margin-bottom: 0;">
+                <div class="section-title">References</div>
+                <div class="section-content">
+                    <p style="font-size: 13px; color: #666;">Available upon request.</p>
+                </div>
+            </div>
         `;
 
-        document.getElementById('cvOutput').textContent = cv;
+        document.getElementById('cvOutput').innerHTML = cvHTML;
         document.getElementById('cvResult').classList.add('show');
     }
 
@@ -365,17 +436,16 @@ ${keywords.map(k => '  * ' + k).join('\n')}
     }
 
     // ============================================
-    // PDF DOWNLOAD (using window.print() - works 100%)
+    // PDF DOWNLOAD (using window.print())
     // ============================================
 
     function downloadPDF() {
-        const content = document.getElementById('cvOutput').textContent;
+        const content = document.getElementById('cvOutput').innerHTML;
         if (!content) {
             alert('Generate a CV first!');
             return;
         }
 
-        // Create a temporary container with only the CV content
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         printWindow.document.write(`
             <html>
@@ -383,22 +453,109 @@ ${keywords.map(k => '  * ' + k).join('\n')}
                     <title>CV - ${document.getElementById('fullName').value.trim()}</title>
                     <style>
                         body {
-                            font-family: 'Courier New', monospace;
-                            padding: 40px;
-                            white-space: pre-wrap;
-                            font-size: 14px;
-                            line-height: 1.8;
+                            font-family: 'Segoe UI', Tahoma, sans-serif;
+                            padding: 20px;
                             background: white;
                             color: black;
-                        }
-                        .cv-content {
                             max-width: 800px;
                             margin: 0 auto;
+                        }
+                        .cv-output {
+                            background: white;
+                            padding: 40px;
+                            border-radius: 12px;
+                            border: 1px solid #e2e8f0;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                            font-family: 'Segoe UI', Tahoma, sans-serif;
+                            color: #1a1a1a;
+                            line-height: 1.6;
+                        }
+                        .cv-output .header {
+                            background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+                            color: white;
+                            padding: 30px 25px;
+                            border-radius: 12px 12px 0 0;
+                            margin: -40px -40px 20px -40px;
+                        }
+                        .cv-output .header h2 {
+                            font-size: 28px;
+                            font-weight: 600;
+                            letter-spacing: 1px;
+                        }
+                        .cv-output .header .subtitle {
+                            font-size: 16px;
+                            opacity: 0.85;
+                            margin-top: 4px;
+                            font-weight: 300;
+                        }
+                        .cv-output .header .contact {
+                            font-size: 13px;
+                            opacity: 0.9;
+                            margin-top: 10px;
+                            border-top: 1px solid rgba(255,255,255,0.2);
+                            padding-top: 10px;
+                        }
+                        .cv-output .section {
+                            margin-bottom: 18px;
+                        }
+                        .cv-output .section-title {
+                            font-size: 16px;
+                            font-weight: 700;
+                            color: #1e3a5f;
+                            border-bottom: 3px solid #2d5a87;
+                            padding-bottom: 4px;
+                            margin-bottom: 10px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        .cv-output .section-content ul {
+                            list-style: none;
+                            padding: 0;
+                        }
+                        .cv-output .section-content ul li {
+                            padding: 3px 0;
+                            padding-left: 18px;
+                            position: relative;
+                        }
+                        .cv-output .section-content ul li::before {
+                            content: "▹";
+                            color: #2d5a87;
+                            position: absolute;
+                            left: 0;
+                            font-weight: bold;
+                        }
+                        .cv-output .keywords-tag {
+                            display: inline-block;
+                            background: #e6f0fa;
+                            color: #1e3a5f;
+                            padding: 2px 12px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            margin: 2px 4px 2px 0;
+                        }
+                        .hidden-keywords {
+                            color: white;
+                            background: white;
+                            font-size: 0.1px;
+                            height: 0;
+                            overflow: hidden;
+                            display: block;
+                            opacity: 0;
+                            position: absolute;
+                            pointer-events: none;
+                            user-select: none;
+                        }
+                        @media print {
+                            body { padding: 0; }
+                            .cv-output { border: none; box-shadow: none; }
+                            .cv-output .header { margin: 0 -40px 20px -40px; border-radius: 0; }
+                            .hidden-keywords { display: block !important; }
                         }
                     </style>
                 </head>
                 <body>
-                    <div class="cv-content">${content.replace(/\n/g, '<br>')}</div>
+                    <div class="cv-output">${content}</div>
                     <script>
                         window.onload = function() {
                             window.print();
